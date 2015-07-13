@@ -1,0 +1,131 @@
+config FB_MSM_MDSS_WRITEBACK
+	bool "MDSS Writeback Panel"
+	---help---
+	The MDSS Writeback Panel provides support for routing the output of
+	MDSS frame buffer driver and MDP processing to memory.
+
+config FB_MSM_MDSS_HDMI_PANEL
+	depends on FB_MSM_MDSS
+	bool "MDSS HDMI Tx Panel"
+	default n
+	---help---
+	The MDSS HDMI Panel provides support for transmitting TMDS signals of
+	MDSS frame buffer data to connected hdmi compliant TVs, monitors etc.
+
+config FB_MSM_MDSS_HDMI_MHL_SII8334
+	depends on FB_MSM_MDSS_HDMI_PANEL
+	bool 'MHL SII8334 support '
+	default n
+	---help---
+	  Support the HDMI to MHL conversion.
+	  MHL (Mobile High-Definition Link) technology
+	  uses USB connector to output HDMI content
+
+config FB_MSM_MDSS_DSI_CTRL_STATUS
+	tristate "DSI controller status check feature"
+	---help---
+	  Check DSI controller status periodically (default period is 5
+	  seconds) by sending Bus-Turn-Around (BTA) command. If DSI controller
+	  fails to acknowledge the BTA command, it sends PANEL_ALIVE=0 status
+	  to HAL layer to reset the controller.
+
+config FB_MSM_MDSS_MDP3
+	depends on FB_MSM_MDSS
+	bool "MDP3 display controller"
+	---help---
+	The MDP3 provides support for an older version display controller
+	included in latest display sub-system, known as MDSS.
+
+#mayu 2012.12.19
+menu "ZTEMT lcd driver support"
+config ZTEMT_LCD_MIPI_COMMON
+	bool "ztemt lcd MIPI interface driver module"
+	default n
+config ZTEMT_QCOMM_I2C6
+       bool "qcomm i2c6"
+       default n
+       help
+         qcomm i2c6
+config ZTEMT_LCD_POWER_CONTRL
+	bool "ztemt lcd AVDD IOVDD contrl"
+	depends on ZTEMT_LCD_MIPI_COMMON
+	default n
+config LCD_KCAL
+	depends on FB_MSM_MDSS
+	bool "Enable sysfs for LCD KCAL"
+	default n
+#luochangyang 2014/03/07
+choice
+	prompt "MIPI 1080P R63311 SHARP IPS"
+	depends on ZTEMT_LCD_MIPI_COMMON
+
+config ZTEMT_MIPI_1080P_R63311_SHARP_IPS_5P0
+	bool "MIPI 1080P R63311 SHARP IPS 5.0"
+	help
+	  This option enables support 5.0 inch LCD.
+
+config ZTEMT_MIPI_1080P_R63311_SHARP_IPS_5P5
+	bool "MIPI 1080P R63311 SHARP IPS 5.5"
+	depends on ZTEMT_LCD_MIPI_COMMON
+	help
+	  This option enables support 5.54 inch LCD.
+      
+config ZTEMT_MIPI_1080P_R63417_SHARP_IPS_5P5
+    bool "MIPI 1080P R63417 SHARP 5.5"
+    help
+        This option enables support 5.5 inch LCD.
+	
+config ZTEMT_MIPI_1080P_R63311_SHARP_IPS_6P4
+	bool "MIPI 1080P R63311 SHARP IPS 6.4"
+	help
+	  This option enables support 6.4 inch LCD.
+	  
+config ZTEMT_MIPI_2K_R63419_SHARP_IPS_5P5
+    bool "MIPI   2K  R63419 SHARP IPS 5.5"
+    help
+        This option enables support 5.5 inch LCD.
+        
+endchoice
+
+choice
+	prompt "MIPI 1080P R63311 SHARP IPS 5P0"
+	depends on ZTEMT_MIPI_1080P_R63311_SHARP_IPS_5P0
+
+config ZTEMT_MIPI_1080P_R63311_SHARP_IPS_5P0_NX503A
+	bool "MIPI 1080P R63311 SHARP IPS 5.0 FOR NX503A"
+	help
+	  This option enables support 5.0 inch LCD for NX503A.
+
+config ZTEMT_MIPI_1080P_R63311_SHARP_IPS_5P0_NX507J
+	bool "MIPI 1080P R63311 SHARP IPS 5.0 FOR NX507J"
+	help
+	  This option enables support 5.0 inch LCD for NX507J.
+
+endchoice
+
+config ZTEMT_LCD_AVDD_CONFIG_BY_TPS65132
+    bool "ztemt lcd AVDD config by tps65132"
+	depends on ZTEMT_LCD_MIPI_COMMON
+	default n
+	
+config ZTEMT_LCD_DISP_ENHANCE
+	bool "LCD disp color enhance"
+	depends on ZTEMT_LCD_MIPI_COMMON
+	default n
+	
+config ZTEMT_LCD_DEBUG_EN
+	bool "LCD debug log enable"
+	depends on ZTEMT_LCD_MIPI_COMMON
+	default n
+#luochangyang END
+config ZTEMT_LCD_BACKLIGHT
+	bool "ztemt lcd backlight"
+	depends on ZTEMT_LCD_MIPI_COMMON
+	default n
+
+config ZTEMT_LCD_BACKLIGHT_LINEAR_CONTROL_METHOLD
+	bool "ztemt lcd backlight linear control methold"
+	depends on ZTEMT_LCD_MIPI_COMMON
+	default n
+
+endmenu

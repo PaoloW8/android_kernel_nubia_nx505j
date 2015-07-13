@@ -1,0 +1,9 @@
+obj-$(CONFIG_BOARD_ZTEMT_NX601J) += board-8974-NX601J.o board-8974-gpiomux-NX601J.o clock-8974-NX601J.o
+obj-$(CONFIG_BOARD_ZTEMT_NX504J) += board-8974-NX504J.o board-8974-gpiomux-NX504J.o clock-8974-NX504J.o
+obj-$(CONFIG_BOARD_ZTEMT_NX505J) += board-8974-NX505J.o board-8974-gpiomux-NX505J.o clock-8974-NX505J.o
+obj-$(CONFIG_BOARD_ZTEMT_NX506J) += board-8974-NX506J.o board-8974-gpiomux-NX506J.o clock-8974-NX506J.o
+obj-$(CONFIG_BOARD_ZTEMT_NX507J) += board-8974-NX507J.o board-8974-gpiomux-NX507J.o clock-8974-NX507J.o
+obj-$(CONFIG_BOARD_ZTEMT_NX503A) += board-8974-NX503A.o board-8974-gpiomux-NX503A.o clock-8974-NX503A.o
+obj-$(CONFIG_BOARD_ZTEMT_NX514J) += board-8974-NX514J.o board-8974-gpiomux-NX514J.o clock-8974-NX514J.o
+obj-$(CONFIG_BOARD_ZTEMT_NX515J) += board-8974-NX515J.o board-8974-gpiomux-NX515J.o clock-8974-NX515J.o
+obj-$(CONFIG_BOARD_ZTEMT_NX516J) += board-8974-NX516J.o board-8974-gpiomux-NX516J.o clock-8974-NX516J.o

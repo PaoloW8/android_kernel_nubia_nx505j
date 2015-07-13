@@ -1,0 +1,91 @@
+#
+# Board configuration
+#
+menuconfig ARCH_MSM8974
+	bool "Select the Supported Board of Nubia"
+	help
+	  Say Y here, and a list of supported Boards will be displayed.
+	  This option doesn't affect the kernel.
+
+	  If unsure, say Y.
+
+if ARCH_MSM8974
+
+config ARCH_MSM8974_ORIG
+	bool "Original ARCH_MSM8974"
+	help
+	  Support for Qualcomm MSM8974AB/AC MTP original eval board.
+	  
+config ARCH_MSM8974_ZTEMT
+	bool "ZTEMT ARCH_MSM8974"
+	help
+	  Support for ZTEMT MSM8974AB/AC MTP board.
+
+choice
+	depends on ARCH_MSM8974_ZTEMT
+	prompt "MSM8974_MTP Based ZTEMT Board"
+	
+config BOARD_ZTEMT_NX601J
+	bool "ZTEMT NX601J"
+	help
+	  Support for the ZTEMT NX601J board.
+
+config BOARD_ZTEMT_NX504J
+	bool "ZTEMT NX504J"
+	help
+	  Support for the ZTEMT NX504J board.
+
+config BOARD_ZTEMT_NX505J
+	bool "ZTEMT NX505J"
+	help
+	  Support for the ZTEMT NX505J board.
+
+config BOARD_ZTEMT_NX506J
+	bool "ZTEMT NX506J"
+	help
+	  Support for the ZTEMT NX506J board.
+
+config BOARD_ZTEMT_NX507J
+	bool "ZTEMT NX507J"
+	help
+	  Support for the ZTEMT NX507J board.	
+
+config BOARD_ZTEMT_NX503A
+	bool "ZTEMT NX503A"
+	help
+	  Support for the ZTEMT NX503A board.
+
+config BOARD_ZTEMT_NX514J
+	bool "ZTEMT NX514J"
+	help
+	  Support for the ZTEMT NX514J board.
+
+config BOARD_ZTEMT_NX515J
+	bool "ZTEMT NX515J"
+	help
+	  Support for the ZTEMT NX515J board.
+
+config BOARD_ZTEMT_NX516J
+	bool "ZTEMT NX516J"
+	help
+	  Support for the ZTEMT NX516J board.
+endchoice	
+
+config ZTEMT_RESTART
+	bool "ZTEMT restart"
+	help
+	  Support for the ZTEMT restart
+
+config ZTEMT_PANIC_BOOTMODE
+	bool "Enable panic bootmode if kernel panic"
+	help
+	  Select this option will enable feature of setting a 'panic' flag into
+          REBOOT_REASON_ADDR, thus the bootloader can detect the panic reboot reason
+          and append a boomode to cmdline.
+
+config EMMC_UNSUPPORTED_HPI
+	bool "ZTEMT emmc unsupported hpi feature"
+	help
+	  emmc unsupported hpi feature.
+endif
+

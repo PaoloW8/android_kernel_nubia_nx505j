@@ -1,0 +1,28 @@
+#
+# Synaptics DSX touchscreen driver configuration
+#
+menuconfig ZTEMT_TOUCHSCREEN_ATMEL_MXTS
+	bool "ZTEMT ATMEL touchscreen"
+	default n
+	help
+	  Say Y here if you have a Synaptics DSX touchscreen connected
+	  to your system.
+
+	  If unsure, say N.
+	  
+if ZTEMT_TOUCHSCREEN_ATMEL_MXTS
+
+config TOUCHSCREEN_ATMEL_MXTS
+	tristate "ATMEL Touthscreen"
+	depends on ZTEMT_TOUCHSCREEN_ATMEL_MXTS
+	default n
+
+config TOUCHSCREEN_ATMEL_MXTS_DEBUG
+	bool "Enable debug output"
+	depends on TOUCHSCREEN_ATMEL_MXTS
+	default n
+	help
+	  Enable Debug output for Cypress TrueTouch(tm)
+	  Say Y here to enable debug output.
+
+endif
