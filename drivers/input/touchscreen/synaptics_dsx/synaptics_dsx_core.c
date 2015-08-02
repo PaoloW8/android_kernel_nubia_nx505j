@@ -1276,11 +1276,9 @@ static void synaptics_rmi4_sensor_report(struct synaptics_rmi4_data *rmi4_data)
 			input_sync(rmi4_data->input_dev);
 #else
 			input_report_key(rmi4_data->input_dev, KEY_F10, 1);
-			//input_report_key(rmi4_data->input_dev, KEY_POWER, 1);
 			input_sync(rmi4_data->input_dev);
 
 			input_report_key(rmi4_data->input_dev, KEY_F10, 0);
-			//input_report_key(rmi4_data->input_dev, KEY_POWER, 0);
 			input_sync(rmi4_data->input_dev);
 #endif
 
@@ -2400,7 +2398,7 @@ static int synaptics_rmi4_set_input_dev(struct synaptics_rmi4_data *rmi4_data)
 	set_bit(INPUT_PROP_DIRECT, rmi4_data->input_dev->propbit);
 #endif
 	/*luochangyang 2014/03/19*/	
-    set_bit(KEY_POWER, rmi4_data->input_dev->keybit);
+    //set_bit(KEY_POWER, rmi4_data->input_dev->keybit);
     set_bit(KEY_F10, rmi4_data->input_dev->keybit);
 	/*luochangyang END*/
 
@@ -3383,7 +3381,7 @@ static int synaptics_rmi4_fb_notifier_callback(struct notifier_block *self,
 		container_of(self, struct synaptics_rmi4_data, fb_notif);
 
 	if (evdata && evdata->data && rmi4_data && 
-        rmi4_data->input_dev && (event == FB_EVENT_BLANK)) {
+        rmi4_data->input_dev && event == FB_EVENT_BLANK) {
 
 		blank = evdata->data;
 		if (*blank == FB_BLANK_UNBLANK) {

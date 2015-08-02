@@ -1,6 +1,7 @@
 /* drivers/android/ram_console.c
  *
  * Copyright (C) 2007-2008 Google, Inc.
+ * Copyright (C) 2015 XiaoMi, Inc.
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -55,7 +56,7 @@ static int __devinit ram_console_probe(struct platform_device *pdev)
 	struct ram_console_platform_data *pdata = pdev->dev.platform_data;
 	struct persistent_ram_zone *prz;
 
-	prz = persistent_ram_init_ringbuffer(&pdev->dev, true);
+	prz = persistent_ram_init_ringbuffer(&pdev->dev, false);
 	if (IS_ERR(prz))
 		return PTR_ERR(prz);
 
@@ -74,16 +75,9 @@ static int __devinit ram_console_probe(struct platform_device *pdev)
 	return 0;
 }
 
-static const struct of_device_id msm_ram_console_match[] = {
-	{.compatible = "ram-console"},
-	{}
-};
-
 static struct platform_driver ram_console_driver = {
 	.driver		= {
 		.name	= "ram_console",
-		.owner = THIS_MODULE,
-		.of_match_table = msm_ram_console_match,
 	},
 	.probe = ram_console_probe,
 };
@@ -107,9 +101,6 @@ static ssize_t ram_console_read_old(struct file *file, char __user *buf,
 	const char *old_log = persistent_ram_old(prz);
 	char *str;
 	int ret;
-
-	if (dmesg_restrict && !capable(CAP_SYSLOG))
-		return -EPERM;
 
 	/* Main last_kmsg log */
 	if (pos < old_log_size) {
@@ -168,7 +159,6 @@ static int __init ram_console_late_init(void)
 	if (persistent_ram_old_size(prz) == 0)
 		return 0;
 
-	printk("ram_console_late_init() create proc last_kmsg \r\n");
 	entry = create_proc_entry("last_kmsg", S_IFREG | S_IRUGO, NULL);
 	if (!entry) {
 		printk(KERN_ERR "ram_console: failed to create proc entry\n");
