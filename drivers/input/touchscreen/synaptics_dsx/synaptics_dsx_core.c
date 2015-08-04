@@ -3332,9 +3332,9 @@ static int synaptics_rmi4_ztemt_wake(struct synaptics_rmi4_data *rmi4_data)
 	if (rmi4_data->sensor_sleep == true) {
 		synaptics_rmi4_sensor_wake(rmi4_data);
 	    /*** ZTEMT Added by luochangyang, 2014/03/19 ***/
-	    if (!(rmi4_data->wakeup_gesture)) {
+	    //if (!(rmi4_data->wakeup_gesture)) {
 			synaptics_rmi4_irq_enable(rmi4_data, true);
-	    }
+	    //}
 	    /***ZTEMT END***/
 		retval = synaptics_rmi4_reinit_device(rmi4_data);
 		if (retval < 0) {
