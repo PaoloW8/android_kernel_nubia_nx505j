@@ -9721,7 +9721,6 @@ static void hdd_driver_exit(void)
    else
    {
        INIT_COMPLETION(pHddCtx->ssr_comp_var);
-
        if (pHddCtx->isLogpInProgress)
        {
          VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_FATAL,

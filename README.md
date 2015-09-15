@@ -1,1 +1,1 @@
-# android_kernel_ZTE_NX505J 
+# android_kernel_nubia_nx505j 

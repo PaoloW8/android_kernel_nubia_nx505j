@@ -44,6 +44,8 @@ enum {
 #define HAVE_WCNSS_CAL_DOWNLOAD 1
 #define HAVE_WCNSS_RX_BUFF_COUNT 1
 #define WLAN_MAC_ADDR_SIZE (6)
+#define PRONTO_PMU_OFFSET       0x1004
+#define WCNSS_PMU_CFG_GC_BUS_MUX_SEL_TOP   BIT(5)
 
 void wcnss_get_monotonic_boottime(struct timespec *ts);
 struct device *wcnss_wlan_get_device(void);
