@@ -158,7 +158,7 @@ eHalStatus sme_remainOnChnRsp( tpAniSirGlobal pMac, tANI_U8 *pMsg)
             /* process the msg */
             if( callback )
                 callback(pMac, pCommand->u.remainChlCmd.callbackCtx, 0);
-
+             
             if( csrLLRemoveEntry( &pMac->sme.smeCmdActiveList, pEntry, LL_ACCESS_LOCK ) )
             {
                 //Now put this command back on the avilable command list

@@ -1063,6 +1063,7 @@ static int mmc_sd_init_card(struct mmc_host *host, u32 ocr,
 		err = mmc_select_card(card);
 		if (err)
 			return err;
+		host->card = card;
 	}
 
 	err = mmc_sd_setup_card(host, card, oldcard != NULL);
