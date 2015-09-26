@@ -408,7 +408,7 @@ struct hid_field {
 	__u16 dpad;			/* dpad input code */
 };
 
-#define HID_MAX_FIELDS 256
+#define HID_MAX_FIELDS 128
 
 struct hid_report {
 	struct list_head list;
@@ -420,12 +420,10 @@ struct hid_report {
 	struct hid_device *device;			/* associated device */
 };
 
-#define HID_MAX_IDS 256
-
 struct hid_report_enum {
 	unsigned numbered;
 	struct list_head report_list;
-	struct hid_report *report_id_hash[HID_MAX_IDS];
+	struct hid_report *report_id_hash[256];
 };
 
 #define HID_REPORT_TYPES 3
@@ -902,7 +900,7 @@ static inline int hid_hw_power(struct hid_device *hdev, int level)
 	return hdev->ll_driver->power ? hdev->ll_driver->power(hdev, level) : 0;
 }
 
-int hid_report_raw_event(struct hid_device *hid, int type, u8 *data, int size,
+void hid_report_raw_event(struct hid_device *hid, int type, u8 *data, int size,
 		int interrupt);
 
 extern int hid_generic_init(void);

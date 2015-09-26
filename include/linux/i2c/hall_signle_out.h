@@ -53,6 +53,8 @@ struct hall_device_chip {
 
 	struct work_struct irq_work;
 
+	struct delayed_work flush_work;
+
 	struct input_dev *idev;
 
     struct device *hall_device_dev;
@@ -63,6 +65,11 @@ struct hall_device_chip {
 
     bool enabled;
     bool on_irq_working;
+
+    unsigned int state;
+
+    unsigned int hall_hw_device_count;
+
 };
 
 
@@ -76,8 +83,8 @@ static void hall_device_irq_work(struct work_struct *work);
 static int create_sysfs_interfaces(struct device *dev);
 static int hall_device_suspend(struct device *dev);
 static int hall_device_resume(struct device *dev);
-static int __devinit hall_device_probe(struct i2c_client *client, const struct i2c_device_id *id);
-static int __devexit hall_device_remove(struct i2c_client *client);
+static int hall_device_probe(struct i2c_client *client, const struct i2c_device_id *id);
+static int hall_device_remove(struct i2c_client *client);
 static int __init hall_device_init(void);
 static void __exit hall_device_exit(void);
 static void hall_device_chip_data_init(struct hall_device_chip *chip);

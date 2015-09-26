@@ -28,6 +28,22 @@ Revision 1-0-0 04/16/2014
 
 *******************************************************************************/
  
+
+#include <linux/module.h>
+#include <linux/time.h>
+#include <linux/init.h>
+#include <linux/delay.h>
+
+#include <linux/of_gpio.h>
+#include <linux/gpio.h>
+#include <linux/err.h>
+#include <linux/regulator/consumer.h>
+#include <linux/qpnp/pwm.h>
+#include <linux/clk.h>
+#include <linux/spinlock_types.h>
+#include <linux/kthread.h>
+
+
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/slab.h>
@@ -52,8 +68,11 @@ Revision 1-0-0 04/16/2014
 #include <linux/of_gpio.h>
 #include <linux/pm_runtime.h>
 #include <linux/i2c/hall_signle_out.h>
-#include <linux/of_gpio.h>
 #include <linux/mutex.h>
+#include <linux/io.h>
+#include <linux/platform_device.h>
+#include <linux/of_platform.h>
+#include <linux/kernel.h>
 
 
 
@@ -110,7 +129,7 @@ static struct i2c_driver hall_device_driver = {
     },
     .id_table = hall_device_idtable_id,
     .probe = hall_device_probe,
-    .remove = __devexit_p(hall_device_remove),
+    .remove = hall_device_remove,
 };
 
 
@@ -163,46 +182,45 @@ static enum hrtimer_restart hall_device_unlock_wakelock_work_func(struct hrtimer
 static void hall_device_irq_work(struct work_struct *work)
 {
 	struct hall_device_chip *chip = container_of(work, struct hall_device_chip, irq_work);
+    unsigned int hall_device_state;
 
 	mutex_lock(&chip->lock);
-    //SENSOR_LOG_INFO("enter\n");
+    hall_device_state = gpio_get_value(chip->irq.irq_pin) ? MAGNETIC_DEVICE_FAR : MAGNETIC_DEVICE_NEAR;
 
-    if (0 == gpio_get_value(chip->irq.irq_pin))
-    {  
-       SENSOR_LOG_INFO("MAGNETIC_DEVICE NEAR\n");
-       input_report_rel(chip->idev, REL_RX, MAGNETIC_DEVICE_NEAR);
-       hall_device_wakelock_ops(&(chip->wakeup_wakelock),false);
+    if (hall_device_state==chip->state)
+    {
+        SENSOR_LOG_INFO("MAGNETIC_DEVICE [%s] same state\n",hall_device_state==1? "NEAR" : "FAR");
     }
     else
     {
-        SENSOR_LOG_INFO("MAGNETIC_DEVICE FAR\n");
-        input_report_rel(chip->idev, REL_RX, MAGNETIC_DEVICE_FAR);
+        chip->state = hall_device_state;
+        SENSOR_LOG_INFO("MAGNETIC_DEVICE [%s]\n",hall_device_state==1? "NEAR" : "FAR");
+        input_report_rel(chip->idev, REL_RX, chip->state);
+        input_sync(chip->idev);
+    }
+
+    if (chip->state==MAGNETIC_DEVICE_NEAR)
+    {
+        hall_device_wakelock_ops(&(chip->wakeup_wakelock),false);
+    }
+    else
+    {
         hrtimer_start(&chip->unlock_wakelock_timer, ktime_set(3, 0), HRTIMER_MODE_REL);
     }
-    input_sync(chip->idev);
 
 	chip->on_irq_working = false;
-
     hall_device_irq_enable(&(chip->irq), true, true);
-    //SENSOR_LOG_INFO("exit\n");
 	mutex_unlock(&chip->lock);
 };
 
 static void hall_device_check_state(struct hall_device_chip *chip)
 {
-    if (1==gpio_get_value(chip->irq.irq_pin))
-    {
-        SENSOR_LOG_INFO("MAGNETIC_DEVICE FAR\n");
-        input_report_rel(chip->idev, REL_RX, MAGNETIC_DEVICE_FAR);
-    }
-    else
-    {
-            SENSOR_LOG_INFO("MAGNETIC_DEVICE NEAR\n");
-            input_report_rel(chip->idev, REL_RX, MAGNETIC_DEVICE_NEAR);
-    }
+    chip->state = gpio_get_value(chip->irq.irq_pin) ? MAGNETIC_DEVICE_FAR : MAGNETIC_DEVICE_NEAR;
 
+    SENSOR_LOG_INFO("MAGNETIC_DEVICE [%s]\n",chip->state==1? "NEAR" : "FAR");
+
+    input_report_rel(chip->idev, REL_RX, chip->state);
     input_sync(chip->idev);
-
 };
 
 
@@ -267,6 +285,7 @@ static void hall_device_enable(struct hall_device_chip *chip, int on)
 
 	if (on) 
     {
+        chip->state = MAGNETIC_DEVICE_UNKNOW;
 		hall_device_irq_enable(&(chip->irq), true, true);
         hall_device_check_state(chip);
 	} 
@@ -276,6 +295,19 @@ static void hall_device_enable(struct hall_device_chip *chip, int on)
     }
 }
 
+static ssize_t hall_value_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	struct hall_device_chip *chip = dev_get_drvdata(dev);
+	SENSOR_LOG_INFO("\n");
+	schedule_delayed_work(&chip->flush_work, msecs_to_jiffies(200));
+	return strlen(buf);
+}
+
+static ssize_t hall_hw_count_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	struct hall_device_chip *chip = dev_get_drvdata(dev);
+	return snprintf(buf, PAGE_SIZE, "%d\n", chip->hall_hw_device_count);
+}
 
 static ssize_t hall_device_enable_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
@@ -303,6 +335,8 @@ static ssize_t hall_device_enable_store(struct device *dev, struct device_attrib
 
 static struct device_attribute attrs_hall_device[] = {
 	__ATTR(enable,                          0640,   hall_device_enable_show,            hall_device_enable_store),
+    __ATTR(hall_hw_count,                   0444,   hall_hw_count_show,                 NULL),
+    __ATTR(hall_value,                      0444,   hall_value_show,                    NULL),
 };
 
 static int create_sysfs_interfaces(struct device *dev)
@@ -327,6 +361,8 @@ static void hall_device_chip_data_init(struct hall_device_chip *chip)
     chip->wakeup_wakelock.name = "hall_device_wakelock";
     chip->wakeup_wakelock.locked = false;
     chip->on_irq_working = false;
+    chip->hall_hw_device_count = 1;
+    chip->state = MAGNETIC_DEVICE_UNKNOW;
 }
 
 
@@ -338,8 +374,15 @@ static int hall_device_parse_dt(struct hall_device_chip *chip)
     return 0;
 }
 
+static void hall_device_flush_work_func(struct work_struct *work)
+{
+	struct hall_device_chip *chip = container_of(work, struct hall_device_chip, flush_work.work);
+    SENSOR_LOG_INFO("prob Enter\n");
+	hall_device_check_state(chip);
+    SENSOR_LOG_INFO("prob Exit\n");
+}
 
-static int __devinit hall_device_probe(struct i2c_client *client,
+static int hall_device_probe(struct i2c_client *client,
                   const struct i2c_device_id *id)
 {
     int ret = 0;
@@ -359,6 +402,8 @@ static int __devinit hall_device_probe(struct i2c_client *client,
     hall_device_chip_data_init(chip);
 
     hall_device_parse_dt(chip);
+
+    INIT_DELAYED_WORK(&chip->flush_work, hall_device_flush_work_func);
 
 	mutex_init(&chip->lock);
 
@@ -388,7 +433,8 @@ static int __devinit hall_device_probe(struct i2c_client *client,
         }
     }
     
-    ret = gpio_tlmm_config(GPIO_CFG(chip->irq.irq_pin, 0, GPIO_CFG_INPUT, GPIO_CFG_PULL_UP, GPIO_CFG_2MA), GPIO_CFG_ENABLE);
+    gpio_direction_input(chip->irq.irq_pin);
+    gpio_set_value(chip->irq.irq_pin, 1);
 
     chip->irq.irq_num = gpio_to_irq(chip->irq.irq_pin);
     INIT_WORK(&chip->irq_work, hall_device_irq_work);
@@ -478,7 +524,7 @@ static int hall_device_suspend(struct device *dev)
   * hall_device_remove() - remove device
   * @client: I2C client device
   */
- static int __devexit hall_device_remove(struct i2c_client *client)
+ static int hall_device_remove(struct i2c_client *client)
  {
      struct shtc1_data *chip_data = i2c_get_clientdata(client);
  
