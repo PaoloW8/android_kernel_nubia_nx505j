@@ -58,6 +58,7 @@ Revision 1-0-0 04/16/2014
 #include <linux/hrtimer.h>
 #include <linux/ktime.h>
 #include <linux/device.h>
+#include <linux/switch.h>
 #include <linux/uaccess.h>
 #include <linux/delay.h>
 #include <linux/hwmon.h>
@@ -105,6 +106,10 @@ Revision 1-0-0 04/16/2014
 static dev_t const   hall_device_dev_t   = MKDEV(MISC_MAJOR, 252);
 
 static struct class  *hall_device_class;
+
+static struct switch_dev cover_switch = {
+        .name = "cover",
+};
 
 static const struct dev_pm_ops hall_device_pm_ops = {
     .suspend = hall_device_suspend,
@@ -193,6 +198,7 @@ static void hall_device_irq_work(struct work_struct *work)
     }
     else
     {
+	switch_set_state(&cover_switch, hall_device_state==1 ? 1 : 0);
         chip->state = hall_device_state;
         SENSOR_LOG_INFO("MAGNETIC_DEVICE [%s]\n",hall_device_state==1? "NEAR" : "FAR");
         input_report_rel(chip->idev, REL_RX, chip->state);
@@ -472,8 +478,14 @@ static int hall_device_probe(struct i2c_client *client,
     hrtimer_init(&chip->unlock_wakelock_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
     chip->unlock_wakelock_timer.function = hall_device_unlock_wakelock_work_func;
 
-
     SENSOR_LOG_INFO("prob success\n");
+
+    if (switch_dev_register(&cover_switch) < 0) {
+		pr_err("fail to register cover switch!\n");
+		return 0;
+    }
+
+    switch_set_state(&cover_switch, gpio_get_value(chip->irq.irq_pin) ? 0 : 1);
 
     return 0;
 
@@ -531,6 +543,7 @@ static int hall_device_suspend(struct device *dev)
      SENSOR_LOG_INFO("hall_device_remove\n");
     
      kfree(chip_data);
+     switch_dev_unregister(&cover_switch);
      return 0;
  }
 
