@@ -41,7 +41,6 @@ static const match_table_t sdcardfs_tokens = {
 	{Opt_fsgid, "fsgid=%u"},
 	{Opt_gid, "gid=%u"},
 	{Opt_debug, "debug"},
-	{Opt_lower_fs, "lower_fs=%s"},
 	{Opt_mask, "mask=%u"},
 	{Opt_userid, "userid=%d"},
 	{Opt_multiuser, "multiuser"},
@@ -55,7 +54,6 @@ static int parse_options(struct super_block *sb, char *options, int silent,
 	char *p;
 	substring_t args[MAX_OPT_ARGS];
 	int option;
-	char *string_option;
 
 	/* by default, we use AID_MEDIA_RW as uid, gid */
 	opts->fs_low_uid = AID_MEDIA_RW;
@@ -64,8 +62,6 @@ static int parse_options(struct super_block *sb, char *options, int silent,
 	opts->multiuser = false;
 	opts->fs_user_id = 0;
 	opts->gid = 0;
-	/* by default, we use LOWER_FS_EXT4 as lower fs type */
-	opts->lower_fs = LOWER_FS_EXT4;
 	/* by default, 0MB is reserved */
 	opts->reserved_mb = 0;
 
@@ -113,18 +109,6 @@ static int parse_options(struct super_block *sb, char *options, int silent,
 		case Opt_multiuser:
 			opts->multiuser = true;
 			break;
-		case Opt_lower_fs:
-			string_option = match_strdup(&args[0]);
-			if (!strcmp("ext4", string_option)) {
-				opts->lower_fs = LOWER_FS_EXT4;
-			} else if (!strcmp("fat", string_option)) {
-				opts->lower_fs = LOWER_FS_FAT;
-			} else {
-				kfree(string_option);
-				goto invalid_option;
-			}
-			kfree(string_option);
-			break;
 		case Opt_reserved_mb:
 			if (match_int(&args[0], &option))
 				return 0;
@@ -132,7 +116,6 @@ static int parse_options(struct super_block *sb, char *options, int silent,
 			break;
 		/* unknown option */
 		default:
-invalid_option:
 			if (!silent) {
 				printk( KERN_ERR "Unrecognized mount option \"%s\" "
 						"or missing value", p);
@@ -285,13 +268,13 @@ static int sdcardfs_read_super(struct super_block *sb, const char *dev_name,
 	sb_info->obbpath_s = kzalloc(PATH_MAX, GFP_KERNEL);
 	mutex_lock(&sdcardfs_super_list_lock);
 	if(sb_info->options.multiuser) {
-		setup_derived_state(sb->s_root->d_inode, PERM_PRE_ROOT, sb_info->options.fs_user_id, AID_ROOT, false);
+		setup_derived_state(sb->s_root->d_inode, PERM_PRE_ROOT, sb_info->options.fs_user_id, AID_ROOT, false, sb->s_root->d_inode);
 		snprintf(sb_info->obbpath_s, PATH_MAX, "%s/obb", dev_name);
 		/*err =  prepare_dir(sb_info->obbpath_s,
 					sb_info->options.fs_low_uid,
 					sb_info->options.fs_low_gid, 00755);*/
 	} else {
-		setup_derived_state(sb->s_root->d_inode, PERM_ROOT, sb_info->options.fs_low_uid, AID_ROOT, false);
+		setup_derived_state(sb->s_root->d_inode, PERM_ROOT, sb_info->options.fs_low_uid, AID_ROOT, false, sb->s_root->d_inode);
 		snprintf(sb_info->obbpath_s, PATH_MAX, "%s/Android/obb", dev_name);
 	}
 	fix_derived_permission(sb->s_root->d_inode);

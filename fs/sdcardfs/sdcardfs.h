@@ -122,11 +122,6 @@ typedef enum {
     PERM_ANDROID_MEDIA,
 } perm_t;
 
-typedef enum {
-	LOWER_FS_EXT4,
-	LOWER_FS_FAT,
-} lower_fs_t;
-
 struct sdcardfs_sb_info;
 struct sdcardfs_mount_options;
 
@@ -173,6 +168,8 @@ struct sdcardfs_inode_info {
 	userid_t userid;
 	uid_t d_uid;
 	bool under_android;
+	/* top folder for ownership */
+	struct inode *top;
 
 	struct inode vfs_inode;
 };
@@ -190,7 +187,6 @@ struct sdcardfs_mount_options {
 	gid_t fs_low_gid;
 	userid_t fs_user_id;
 	gid_t gid;
-	lower_fs_t lower_fs;
 	mode_t mask;
 	bool multiuser;
 	unsigned int reserved_mb;
@@ -408,11 +404,12 @@ extern int packagelist_init(void);
 extern void packagelist_exit(void);
 
 /* for derived_perm.c */
-extern void setup_derived_state(struct inode *inode, perm_t perm,
-			userid_t userid, uid_t uid, bool under_android);
+extern void setup_derived_state(struct inode *inode, perm_t perm, userid_t userid,
+			uid_t uid, bool under_android, struct inode *top);
 extern void get_derived_permission(struct dentry *parent, struct dentry *dentry);
 extern void get_derived_permission_new(struct dentry *parent, struct dentry *dentry, struct dentry *newdentry);
-extern void get_derive_permissions_recursive(struct dentry *parent);
+extern void fixup_top_recursive(struct dentry *parent);
+extern void fixup_perms_recursive(struct dentry *dentry, const char *name, size_t len);
 
 extern void update_derived_permission_lock(struct dentry *dentry);
 extern int need_graft_path(struct dentry *dentry);
@@ -434,6 +431,7 @@ static inline void unlock_dir(struct dentry *dir)
 	dput(dir);
 }
 
+
 static inline int prepare_dir(const char *path_s, uid_t uid, gid_t gid, mode_t mode)
 {
 	int err;
@@ -441,7 +439,7 @@ static inline int prepare_dir(const char *path_s, uid_t uid, gid_t gid, mode_t m
 	struct iattr attrs;
 	struct path parent;
 
-	dent = kern_path_locked(path_s, &parent);
+//	dent = kern_path_locked(path_s, &parent);
 	if (IS_ERR(dent)) {
 		err = PTR_ERR(dent);
 		if (err == -EEXIST)
