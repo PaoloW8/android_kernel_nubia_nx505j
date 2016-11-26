@@ -60,8 +60,47 @@ struct cyttsp4_btn_data {
 	bool input_device_registered;
 	char phys[NAME_MAX];
 	u8 pr_buf[CY_MAX_PRBUF_SIZE];
+	unsigned char button_enabled;
 };
 
+static ssize_t cyttsp4_button_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	struct cyttsp4_btn_data *bd = dev_get_drvdata(dev);
+
+	return snprintf(buf, PAGE_SIZE, "%u\n",
+			bd->button_enabled);
+}
+
+static ssize_t cyttsp4_button_store(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t count)
+{
+	struct cyttsp4_btn_data *bd = dev_get_drvdata(dev);
+
+	unsigned int val = 0;
+
+	if (sscanf(buf, "%u", &val) != 1)
+		return -EINVAL;
+
+	val = (val == 0 ? 0 : 1);
+
+	if (bd->button_enabled == val)
+		return count;
+
+	if (val) {
+		set_bit(KEY_BACK, bd->input->keybit);
+		set_bit(KEY_MENU, bd->input->keybit);
+		set_bit(KEY_HOMEPAGE, bd->input->keybit);
+	} else {
+		clear_bit(KEY_BACK, bd->input->keybit);
+		clear_bit(KEY_MENU, bd->input->keybit);
+		clear_bit(KEY_HOMEPAGE, bd->input->keybit);
+	}
+
+	bd->button_enabled = val;
+
+	return count;
+}
 
 static inline void cyttsp4_btn_key_action(struct cyttsp4_btn_data *bd,
 	int btn_no, int btn_state)
@@ -191,6 +230,10 @@ static int cyttsp4_btn_attention(struct cyttsp4_device *ttsp)
 	struct device *dev = &ttsp->dev;
 	struct cyttsp4_btn_data *bd = dev_get_drvdata(dev);
 	int rc = 0;
+
+	if (!bd->button_enabled) {
+		return 0;
+	}
 
 	dev_vdbg(dev, "%s\n", __func__);
 
@@ -345,6 +388,8 @@ static int cyttsp4_setup_input_device(struct cyttsp4_device *ttsp)
 	for (i = 0; i < bd->si->si_ofs.num_btns; i++)
 		__set_bit(bd->si->btn[i].key_code, bd->input->keybit);
 
+	bd->button_enabled = 1;
+
 	rc = input_register_device(bd->input);
 	if (rc < 0)
 		dev_err(dev, "%s: Error, failed register input device r=%d\n",
@@ -373,6 +418,38 @@ static int cyttsp4_setup_input_attention(struct cyttsp4_device *ttsp)
 		cyttsp4_setup_input_attention, 0);
 
 	return rc;
+}
+
+static struct device_attribute attributes[] = {
+	__ATTR(button, (00664),
+		cyttsp4_button_show,
+		cyttsp4_button_store),
+};
+
+static int add_sysfs_interfaces(struct cyttsp4_btn_data *bd,
+		struct device *dev)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(attributes); i++)
+		if (device_create_file(dev, attributes + i))
+			goto undo;
+
+	return 0;
+undo:
+	for (i--; i >= 0 ; i--)
+		device_remove_file(dev, attributes + i);
+	dev_err(dev, "%s: failed to create sysfs interface\n", __func__);
+	return -ENODEV;
+}
+
+static void remove_sysfs_interfaces(struct cyttsp4_btn_data *bd,
+		struct device *dev)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(attributes); i++)
+		device_remove_file(dev, attributes + i);
 }
 
 static int cyttsp4_btn_probe(struct cyttsp4_device *ttsp)
@@ -437,6 +514,13 @@ static int cyttsp4_btn_probe(struct cyttsp4_device *ttsp)
 			cyttsp4_setup_input_attention, 0);
 	}
 
+	dev_dbg(dev, "%s: add sysfs interfaces\n", __func__);
+	rc = add_sysfs_interfaces(bd, dev);
+	if (rc < 0) {
+		dev_err(dev, "%s: Error, fail sysfs init\n", __func__);
+		goto error_init_input;
+	}
+
 #ifdef CONFIG_HAS_EARLYSUSPEND
 	bd->es.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN + 1;
 	bd->es.suspend = cyttsp4_btn_early_suspend;
@@ -488,6 +572,8 @@ static int cyttsp4_btn_release(struct cyttsp4_device *ttsp)
 
 	pm_runtime_suspend(dev);
 	pm_runtime_disable(dev);
+
+	remove_sysfs_interfaces(bd, dev);
 
 	dev_set_drvdata(dev, NULL);
 	kfree(bd);
