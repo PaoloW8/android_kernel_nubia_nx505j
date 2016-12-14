@@ -145,6 +145,8 @@ void zte_mipi_saturation(void)
 	printk("lcd:%s value=%d\n", __func__, value);
 #endif
 
+	return;
+
 	switch (value) {
 	case INTENSITY_00:
 		zte_send_cmd(&display_soft_cmd,ZTE_SHARP_ENHANCE_CMD_COUNT);
@@ -199,6 +201,8 @@ void zte_mipi_colortmp(void)
 #if ZTE_DISP_ENHANCE_DEBUG
 	printk("lcd:%s value=%d\n", __func__, value);
 #endif
+
+	return;
 
 	switch (value) {
 	case INTENSITY_00:
