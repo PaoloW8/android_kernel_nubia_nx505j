@@ -481,7 +481,7 @@ static int32_t msm_actuator_move_focus(
 	curr_lens_pos = a_ctrl->step_position_table[a_ctrl->curr_step_pos];
 //comment by congshan start
 	//a_ctrl->i2c_tbl_index = 0;
-//comment by congshan end¢˜
+//comment by congshan end
 	CDBG("curr_step_pos =%d dest_step_pos =%d curr_lens_pos=%d\n",
 		a_ctrl->curr_step_pos, dest_step_pos, curr_lens_pos);
 
