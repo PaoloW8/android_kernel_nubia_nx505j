@@ -244,6 +244,7 @@ static void build_pairing_cmd(struct l2cap_conn *conn,
 		req->init_key_dist = all_keys;
 		req->resp_key_dist = dist_keys;
 		req->auth_req = authreq;
+
 		BT_DBG("SMP_CMD_PAIRING_REQ %d %d %d %d %2.2x %2.2x",
 				req->io_capability, req->oob_flag,
 				req->auth_req, req->max_key_size,

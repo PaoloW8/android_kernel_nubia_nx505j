@@ -325,7 +325,7 @@ static void hci_uart_tty_close(struct tty_struct *tty)
 		if (hdev)
 			hci_uart_close(hdev);
 
-		cancel_work_sync(&hu->write_work);
+		tasklet_kill(&hu->tty_wakeup_task);
 
 		if (test_and_clear_bit(HCI_UART_PROTO_SET, &hu->flags)) {
 			hu->proto->close(hu);
